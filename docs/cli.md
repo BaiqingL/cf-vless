@@ -11,7 +11,7 @@ repository root through `--project-root` where applicable.
 | `deploy` | Run the exact dry-run branch or publish the managed Worker | Existing state |
 | `status` | Verify owned resources, certificate provenance, and public HTTPS | Existing state |
 | `test` | Run executable-client live gates | Four approved probe endpoints |
-| `config` | Generate five owner-only client artifacts | Existing state |
+| `config` | Generate six owner-only client artifacts, including sing-box QRS | Existing state |
 | `rotate` | Rotate, finalize, or emergency-revoke credentials | Existing state |
 | `logs` | Stream sanitized live events through Wrangler | Existing state and Wrangler login |
 | `remove` | Plan or delete only marker-owned resources | Existing state |

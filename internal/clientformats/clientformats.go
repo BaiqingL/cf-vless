@@ -1,5 +1,5 @@
-// Package clientformats renders the four supported client configuration
-// formats from canonical deployment state.
+// Package clientformats renders supported client configurations from canonical
+// deployment state.
 package clientformats
 
 import (
@@ -24,11 +24,12 @@ const (
 // Outputs contains every supported client artifact. VLESSURI and every byte
 // slice contain the current UUID and must be treated as secrets.
 type Outputs struct {
-	VLESSURI    string
-	QRCodePNG   []byte
-	XrayJSON    []byte
-	SingBoxJSON []byte
-	MihomoYAML  []byte
+	VLESSURI         string
+	QRCodePNG        []byte
+	XrayJSON         []byte
+	SingBoxJSON      []byte
+	SingBoxQRCodeGIF []byte
+	MihomoYAML       []byte
 }
 
 // Generate renders all client artifacts from the current credential only.
@@ -40,10 +41,6 @@ func Generate(deployment config.Deployment) (Outputs, error) {
 	if err != nil {
 		return Outputs{}, err
 	}
-	qrCode, err := QRCodePNG(deployment)
-	if err != nil {
-		return Outputs{}, err
-	}
 	xray, err := XrayJSON(deployment)
 	if err != nil {
 		return Outputs{}, err
@@ -52,16 +49,25 @@ func Generate(deployment config.Deployment) (Outputs, error) {
 	if err != nil {
 		return Outputs{}, err
 	}
+	qrCode, err := QRCodePNG(deployment)
+	if err != nil {
+		return Outputs{}, err
+	}
+	singBoxQRCode, err := singBoxQRCodeGIF(deployment.DisplayName, singBox)
+	if err != nil {
+		return Outputs{}, err
+	}
 	mihomo, err := MihomoYAML(deployment)
 	if err != nil {
 		return Outputs{}, err
 	}
 	return Outputs{
-		VLESSURI:    uri,
-		QRCodePNG:   qrCode,
-		XrayJSON:    xray,
-		SingBoxJSON: singBox,
-		MihomoYAML:  mihomo,
+		VLESSURI:         uri,
+		QRCodePNG:        qrCode,
+		XrayJSON:         xray,
+		SingBoxJSON:      singBox,
+		SingBoxQRCodeGIF: singBoxQRCode,
+		MihomoYAML:       mihomo,
 	}, nil
 }
 

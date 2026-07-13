@@ -9,9 +9,9 @@ import (
 	"github.com/BaiqingL/cf-vless/internal/config"
 )
 
-var artifactNames = []string{"vless.txt", "vless.png", "xray.json", "sing-box.json", "mihomo.yaml"}
+var artifactNames = []string{"vless.txt", "vless.png", "xray.json", "sing-box.json", "sing-box.gif", "mihomo.yaml"}
 
-// WriteArtifacts renders and promotes all five credential-bearing artifacts as
+// WriteArtifacts renders and promotes all six credential-bearing artifacts as
 // one directory generation. A crash can leave a private staging/backup
 // directory, but never a target directory containing mixed credentials.
 func WriteArtifacts(directory string, deployment config.Deployment, overwrite bool) error {
@@ -64,6 +64,7 @@ func WriteArtifacts(directory string, deployment config.Deployment, overwrite bo
 		"vless.png":     outputs.QRCodePNG,
 		"xray.json":     outputs.XrayJSON,
 		"sing-box.json": outputs.SingBoxJSON,
+		"sing-box.gif":  outputs.SingBoxQRCodeGIF,
 		"mihomo.yaml":   outputs.MihomoYAML,
 	}
 	for _, name := range artifactNames {

@@ -51,7 +51,7 @@ func TestRunWritesAllSecretArtifactsWithoutPrintingCredential(t *testing.T) {
 		t.Fatal("config-gen printed the UUID")
 	}
 
-	for _, name := range []string{"vless.txt", "xray.json", "sing-box.json", "mihomo.yaml", "vless.png"} {
+	for _, name := range []string{"vless.txt", "xray.json", "sing-box.json", "sing-box.gif", "mihomo.yaml", "vless.png"} {
 		path := filepath.Join(outDir, name)
 		info, err := os.Stat(path)
 		if err != nil {
@@ -64,7 +64,7 @@ func TestRunWritesAllSecretArtifactsWithoutPrintingCredential(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ReadFile(%s) error = %v", name, err)
 		}
-		if name != "vless.png" && !bytes.Contains(data, []byte(cfg.Credentials.Current.UUID)) {
+		if name != "vless.png" && name != "sing-box.gif" && !bytes.Contains(data, []byte(cfg.Credentials.Current.UUID)) {
 			t.Fatalf("%s does not contain current UUID", name)
 		}
 	}

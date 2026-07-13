@@ -512,7 +512,7 @@ func TestConfigWritesFivePrivateArtifactsAndNeverPrintsUUID(t *testing.T) {
 	if strings.Contains(stdout.String(), deployment.Credentials.Current.UUID) || strings.Contains(stderr.String(), deployment.Credentials.Current.UUID) {
 		t.Fatal("config output exposed UUID")
 	}
-	for _, name := range []string{"vless.txt", "vless.png", "xray.json", "sing-box.json", "mihomo.yaml"} {
+	for _, name := range []string{"vless.txt", "vless.png", "xray.json", "sing-box.json", "sing-box.gif", "mihomo.yaml"} {
 		info, err := os.Stat(filepath.Join(outputDirectory, name))
 		if err != nil {
 			t.Fatalf("artifact %s stat error = %v", name, err)

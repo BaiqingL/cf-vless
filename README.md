@@ -95,6 +95,11 @@ sing-box application that manages those privileges. It routes private and
 mainland China IP ranges directly and sends all other supported TCP traffic
 through the Worker. See the [client configuration guide](docs/client-configurations.md#sing-box-routing-policy).
 
+`sing-box.gif` is the same complete profile in the official animated QRS
+format. Open the animation and keep it playing while using the QR scanner in a
+current sing-box app; the scanner collects its looping frames and imports the
+local profile without publishing the configuration at a remote URL.
+
 ```sh
 sudo sing-box run -c ./client-configs/sing-box.json
 ```
