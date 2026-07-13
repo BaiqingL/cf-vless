@@ -11,7 +11,10 @@ import (
 	"unicode/utf8"
 )
 
-const vlessCredentialSecretName = "VLESS_CREDENTIALS"
+const (
+	vlessCredentialSecretName = "VLESS_CREDENTIALS"
+	maxWorkerSecretValueBytes = 5 * 1024
+)
 
 var managedWorkerBindingTypes = map[string]string{
 	"EXPECTED_HOST":           "plain_text",
@@ -533,6 +536,9 @@ func (c *Client) SetSecret(ctx context.Context, request SecretRequest) (Operatio
 	}
 	if len(request.Value) == 0 {
 		return OperationResult{}, fmt.Errorf("secret value is required")
+	}
+	if len(request.Value) > maxWorkerSecretValueBytes {
+		return OperationResult{}, fmt.Errorf("secret value exceeds Cloudflare's 5 KB variable limit")
 	}
 	if !utf8.Valid(request.Value) {
 		return OperationResult{}, fmt.Errorf("secret value must be valid UTF-8")

@@ -304,6 +304,51 @@ func TestSetSecretUsesCFProtectedStdinAndRedactsEveryDiagnostic(t *testing.T) {
 	}
 }
 
+func TestSetSecretAcceptsCloudflareVariableSizeLimit(t *testing.T) {
+	secret := bytes.Repeat([]byte("a"), maxWorkerSecretValueBytes)
+	runner := &scriptedRunner{t: t, steps: []runStep{
+		{stdout: `{"result":[` + testManagedScriptInventoryItem + `]}`},
+		{stdout: `{"result":{"bindings":[{"name":"DEPLOYMENT_MARKER","type":"plain_text","text":"` + testOwnershipMarker + `"}]}}`},
+		{stdout: `{"result":{}}`},
+	}}
+	client := newTestClient(t, runner)
+
+	_, err := client.SetSecret(context.Background(), SecretRequest{
+		Worker:          "cf-vless-edge",
+		OwnershipMarker: testOwnershipMarker,
+		Name:            "VLESS_CREDENTIALS",
+		Value:           secret,
+	})
+	if err != nil {
+		t.Fatalf("SetSecret at Cloudflare variable limit: %v", err)
+	}
+
+	runner.assertDone(t)
+	call := runner.calls[2]
+	if len(call.stdin) != maxWorkerSecretValueBytes+1 {
+		t.Fatalf("stdin length = %d, want %d", len(call.stdin), maxWorkerSecretValueBytes+1)
+	}
+	if !bytes.Equal(call.stdin[:maxWorkerSecretValueBytes], secret) || call.stdin[maxWorkerSecretValueBytes] != '\n' {
+		t.Fatal("stdin does not contain the limit-sized secret followed by a newline")
+	}
+}
+
+func TestSetSecretRejectsValueAboveCloudflareVariableSizeLimitBeforePreflight(t *testing.T) {
+	runner := &scriptedRunner{t: t}
+	client := newTestClient(t, runner)
+
+	_, err := client.SetSecret(context.Background(), SecretRequest{
+		Worker:          "cf-vless-edge",
+		OwnershipMarker: testOwnershipMarker,
+		Name:            "VLESS_CREDENTIALS",
+		Value:           bytes.Repeat([]byte("a"), maxWorkerSecretValueBytes+1),
+	})
+	if err == nil || !strings.Contains(err.Error(), "exceeds Cloudflare's 5 KB variable limit") {
+		t.Fatalf("SetSecret above Cloudflare variable limit error = %v", err)
+	}
+	runner.assertDone(t)
+}
+
 func TestCapabilitiesLabelOnlyNecessaryOperationsAsWranglerFallbacks(t *testing.T) {
 	client := newTestClient(t, &scriptedRunner{t: t})
 	report := client.Capabilities(SupportedCFVersion, "4.110.0")
