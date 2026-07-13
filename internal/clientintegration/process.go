@@ -81,6 +81,7 @@ func (process *commandProcess) Kill() error { return process.command.Process.Kil
 type Runner struct {
 	Executor       Executor
 	Starter        ProcessStarter
+	Output         io.Writer
 	StartupTimeout time.Duration
 	StopTimeout    time.Duration
 }
@@ -120,14 +121,18 @@ func (runner Runner) Start(ctx context.Context, specification Spec) (*ClientProc
 	if executor == nil {
 		executor = OSExecutor{}
 	}
-	if _, err := executor.Run(ctx, Command{Name: specification.Binary, Args: specification.CheckArgs}); err != nil {
+	if _, err := executor.Run(ctx, Command{Name: specification.Binary, Args: specification.CheckArgs, Dir: specification.WorkingDirectory}); err != nil {
 		return nil, errors.New("client rejected generated configuration")
 	}
 	starter := runner.Starter
 	if starter == nil {
 		starter = OSProcessStarter{}
 	}
-	process, err := starter.Start(ctx, Command{Name: specification.Binary, Args: specification.RunArgs}, io.Discard, io.Discard)
+	output := runner.Output
+	if output == nil {
+		output = io.Discard
+	}
+	process, err := starter.Start(ctx, Command{Name: specification.Binary, Args: specification.RunArgs, Dir: specification.WorkingDirectory}, output, output)
 	if err != nil {
 		return nil, errors.New("start client process")
 	}

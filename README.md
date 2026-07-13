@@ -89,6 +89,16 @@ Review the exact plan before publishing:
 ./bin/cf-vless config --output ./client-configs
 ```
 
+The generated `sing-box.json` is a system-wide TUN profile. Run it with the
+platform privileges required to create a TUN interface, or import it into a
+sing-box application that manages those privileges. It routes private and
+mainland China IP ranges directly and sends all other supported TCP traffic
+through the Worker. See the [client configuration guide](docs/client-configurations.md#sing-box-routing-policy).
+
+```sh
+sudo sing-box run -c ./client-configs/sing-box.json
+```
+
 `.cf-vless/` and `client-configs/` contain bearer credentials. They are created
 with owner-only permissions and ignored by Git. Never paste either directory
 into an issue, log, or chat.

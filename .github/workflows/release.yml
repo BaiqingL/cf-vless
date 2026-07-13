@@ -44,6 +44,12 @@ jobs:
       - name: Install Worker dependencies
         run: npm --prefix worker ci
 
+      - name: Install pinned sing-box
+        run: test/conformance/install-sing-box-linux-amd64.sh "$RUNNER_TEMP/sing-box"
+
+      - name: Export sing-box path
+        run: echo "SING_BOX_BIN=$RUNNER_TEMP/sing-box" >> "$GITHUB_ENV"
+
       - name: Run release gate
         run: make check
 

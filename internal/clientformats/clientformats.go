@@ -12,8 +12,13 @@ import (
 )
 
 const (
-	localSOCKSPort = 1080
-	mihomoPort     = 7890
+	localSOCKSPort      = 1080
+	mihomoPort          = 7890
+	singBoxGeoIPCNURL   = "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs"
+	singBoxChinaDNSIP   = "223.5.5.5"
+	singBoxChinaDNSName = "dns.alidns.com"
+	singBoxTUNIPv4CIDR  = "172.19.0.1/30"
+	singBoxTUNIPv6CIDR  = "fdfe:dcba:9876::1/126"
 )
 
 // Outputs contains every supported client artifact. VLESSURI and every byte
@@ -196,34 +201,54 @@ func XrayJSONWithLocalPort(deployment config.Deployment, localPort uint16) ([]by
 	return marshalJSON(doc)
 }
 
-// SingBoxJSON renders a VLESS outbound restricted to TCP with a V2Ray
-// WebSocket transport and verified TLS.
+// SingBoxJSON renders a system-wide TUN client. Private and mainland China
+// destinations are direct; unmatched public TCP destinations use VLESS.
 func SingBoxJSON(deployment config.Deployment) ([]byte, error) {
-	return SingBoxJSONWithLocalPort(deployment, localSOCKSPort)
+	return singBoxJSON(deployment, 0, true)
 }
 
-// SingBoxJSONWithLocalPort renders the shipped sing-box format with a
-// caller-selected loopback port for executable integration tests.
+// SingBoxJSONWithLocalPort renders the same routing policy with an unprivileged
+// mixed inbound for executable integration tests.
 func SingBoxJSONWithLocalPort(deployment config.Deployment, localPort uint16) ([]byte, error) {
+	return singBoxJSON(deployment, localPort, false)
+}
+
+func singBoxJSON(deployment config.Deployment, localPort uint16, systemWide bool) ([]byte, error) {
 	if err := deployment.Validate(); err != nil {
 		return nil, err
 	}
-	if localPort == 0 {
+	if !systemWide && localPort == 0 {
 		return nil, errors.New("sing-box local port is invalid")
 	}
 	type logConfig struct {
 		Level string `json:"level"`
 	}
-	type inbound struct {
-		Type       string `json:"type"`
-		Tag        string `json:"tag"`
-		Listen     string `json:"listen"`
-		ListenPort int    `json:"listen_port"`
-	}
 	type tlsConfig struct {
 		Enabled    bool   `json:"enabled"`
 		ServerName string `json:"server_name"`
 		Insecure   bool   `json:"insecure"`
+	}
+	type dnsServer struct {
+		Type       string    `json:"type"`
+		Tag        string    `json:"tag"`
+		Server     string    `json:"server"`
+		ServerPort uint16    `json:"server_port"`
+		Path       string    `json:"path"`
+		TLS        tlsConfig `json:"tls"`
+	}
+	type dnsConfig struct {
+		Servers  []dnsServer `json:"servers"`
+		Final    string      `json:"final"`
+		Strategy string      `json:"strategy"`
+	}
+	type inbound struct {
+		Type        string   `json:"type"`
+		Tag         string   `json:"tag"`
+		Listen      string   `json:"listen,omitempty"`
+		ListenPort  int      `json:"listen_port,omitempty"`
+		Address     []string `json:"address,omitempty"`
+		AutoRoute   bool     `json:"auto_route,omitempty"`
+		StrictRoute bool     `json:"strict_route,omitempty"`
 	}
 	type transport struct {
 		Type    string            `json:"type"`
@@ -231,55 +256,144 @@ func SingBoxJSONWithLocalPort(deployment config.Deployment, localPort uint16) ([
 		Headers map[string]string `json:"headers"`
 	}
 	type outbound struct {
-		Type       string    `json:"type"`
-		Tag        string    `json:"tag"`
-		Server     string    `json:"server"`
-		ServerPort uint16    `json:"server_port"`
-		UUID       string    `json:"uuid"`
-		Network    string    `json:"network"`
-		TLS        tlsConfig `json:"tls"`
-		Transport  transport `json:"transport"`
+		Type           string     `json:"type"`
+		Tag            string     `json:"tag"`
+		Server         string     `json:"server,omitempty"`
+		ServerPort     uint16     `json:"server_port,omitempty"`
+		UUID           string     `json:"uuid,omitempty"`
+		Network        string     `json:"network,omitempty"`
+		DomainResolver string     `json:"domain_resolver,omitempty"`
+		TLS            *tlsConfig `json:"tls,omitempty"`
+		Transport      *transport `json:"transport,omitempty"`
+	}
+	type routeRule struct {
+		IPIsPrivate bool   `json:"ip_is_private,omitempty"`
+		RuleSet     string `json:"rule_set,omitempty"`
+		Network     string `json:"network,omitempty"`
+		Protocol    string `json:"protocol,omitempty"`
+		Action      string `json:"action"`
+		Outbound    string `json:"outbound,omitempty"`
+		Server      string `json:"server,omitempty"`
+		Strategy    string `json:"strategy,omitempty"`
+	}
+	type ruleSet struct {
+		Type           string `json:"type"`
+		Tag            string `json:"tag"`
+		Format         string `json:"format"`
+		URL            string `json:"url"`
+		DownloadDetour string `json:"download_detour"`
+		UpdateInterval string `json:"update_interval"`
+	}
+	type domainResolver struct {
+		Server string `json:"server"`
 	}
 	type route struct {
-		Final string `json:"final"`
+		Rules                 []routeRule    `json:"rules"`
+		RuleSet               []ruleSet      `json:"rule_set"`
+		Final                 string         `json:"final"`
+		AutoDetectInterface   bool           `json:"auto_detect_interface"`
+		DefaultDomainResolver domainResolver `json:"default_domain_resolver"`
+	}
+	type cacheFile struct {
+		Enabled bool `json:"enabled"`
+	}
+	type experimental struct {
+		CacheFile cacheFile `json:"cache_file"`
 	}
 	type document struct {
-		Log       logConfig  `json:"log"`
-		Inbounds  []inbound  `json:"inbounds"`
-		Outbounds []outbound `json:"outbounds"`
-		Route     route      `json:"route"`
+		Log          logConfig    `json:"log"`
+		DNS          dnsConfig    `json:"dns"`
+		Inbounds     []inbound    `json:"inbounds"`
+		Outbounds    []outbound   `json:"outbounds"`
+		Route        route        `json:"route"`
+		Experimental experimental `json:"experimental"`
 	}
 
 	credential := deployment.Credentials.Current
+	inboundConfig := inbound{
+		Type:       "mixed",
+		Tag:        "mixed-in",
+		Listen:     "127.0.0.1",
+		ListenPort: int(localPort),
+	}
+	if systemWide {
+		inboundConfig = inbound{
+			Type:        "tun",
+			Tag:         "tun-in",
+			Address:     []string{singBoxTUNIPv4CIDR, singBoxTUNIPv6CIDR},
+			AutoRoute:   true,
+			StrictRoute: true,
+		}
+	}
+	tls := tlsConfig{
+		Enabled:    true,
+		ServerName: deployment.Hostname,
+		Insecure:   false,
+	}
+	websocket := transport{
+		Type: "ws",
+		Path: credential.Path,
+		Headers: map[string]string{
+			"Host": deployment.Hostname,
+		},
+	}
 	doc := document{
 		Log: logConfig{Level: "warn"},
-		Inbounds: []inbound{{
-			Type:       "mixed",
-			Tag:        "mixed-in",
-			Listen:     "127.0.0.1",
-			ListenPort: int(localPort),
-		}},
-		Outbounds: []outbound{{
-			Type:       "vless",
-			Tag:        "proxy",
-			Server:     deployment.Hostname,
-			ServerPort: deployment.Port,
-			UUID:       credential.UUID,
-			Network:    "tcp",
-			TLS: tlsConfig{
-				Enabled:    true,
-				ServerName: deployment.Hostname,
-				Insecure:   false,
-			},
-			Transport: transport{
-				Type: "ws",
-				Path: credential.Path,
-				Headers: map[string]string{
-					"Host": deployment.Hostname,
+		DNS: dnsConfig{
+			Servers: []dnsServer{{
+				Type:       "https",
+				Tag:        "china-dns",
+				Server:     singBoxChinaDNSIP,
+				ServerPort: 443,
+				Path:       "/dns-query",
+				TLS: tlsConfig{
+					Enabled:    true,
+					ServerName: singBoxChinaDNSName,
+					Insecure:   false,
 				},
-			},
+			}},
+			Final:    "china-dns",
+			Strategy: "prefer_ipv4",
+		},
+		Inbounds: []inbound{inboundConfig},
+		Outbounds: []outbound{{
+			Type:           "vless",
+			Tag:            "proxy",
+			Server:         deployment.Hostname,
+			ServerPort:     deployment.Port,
+			UUID:           credential.UUID,
+			Network:        "tcp",
+			DomainResolver: "china-dns",
+			TLS:            &tls,
+			Transport:      &websocket,
+		}, {
+			Type: "direct",
+			Tag:  "direct",
 		}},
-		Route: route{Final: "proxy"},
+		Route: route{
+			Rules: []routeRule{
+				{Action: "sniff"},
+				{Protocol: "dns", Action: "hijack-dns"},
+				{IPIsPrivate: true, Action: "route", Outbound: "direct"},
+				{Action: "resolve", Server: "china-dns", Strategy: "prefer_ipv4"},
+				{IPIsPrivate: true, Action: "route", Outbound: "direct"},
+				{RuleSet: "geoip-cn", Action: "route", Outbound: "direct"},
+				{Network: "udp", Action: "reject"},
+				{Network: "icmp", Action: "reject"},
+			},
+			RuleSet: []ruleSet{{
+				Type:           "remote",
+				Tag:            "geoip-cn",
+				Format:         "binary",
+				URL:            singBoxGeoIPCNURL,
+				DownloadDetour: "proxy",
+				UpdateInterval: "1d",
+			}},
+			Final:                 "proxy",
+			AutoDetectInterface:   true,
+			DefaultDomainResolver: domainResolver{Server: "china-dns"},
+		},
+		Experimental: experimental{CacheFile: cacheFile{Enabled: true}},
 	}
 	return marshalJSON(doc)
 }

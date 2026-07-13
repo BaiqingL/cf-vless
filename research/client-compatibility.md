@@ -136,7 +136,15 @@ The command is documented by Xray's [command-line reference](https://xtls.github
 
 ## sing-box JSON
 
-### Canonical v1.13.14 shape
+### Transport baseline shape
+
+The sample below records the minimal transport configuration validated during
+the original 2026-07-12 research. The current generated artifact layers the
+documented system-wide TUN and China-direct/foreign-proxy policy from
+[`docs/client-configurations.md`](../docs/client-configurations.md) on top of
+this same VLESS outbound. The live
+integration variant retains a mixed inbound so it can run without elevated
+network privileges.
 
 ```json
 {
@@ -192,6 +200,10 @@ Authoritative upstream references:
 - [VLESS outbound docs](https://sing-box.sagernet.org/configuration/outbound/vless/)
 - [WebSocket V2Ray transport docs](https://sing-box.sagernet.org/configuration/shared/v2ray-transport/#websocket)
 - [outbound TLS docs](https://sing-box.sagernet.org/configuration/shared/tls/#outbound)
+- [TUN inbound docs](https://sing-box.sagernet.org/configuration/inbound/tun/)
+- [route docs](https://sing-box.sagernet.org/configuration/route/)
+- [rule-set docs](https://sing-box.sagernet.org/configuration/rule-set/)
+- [DNS-over-HTTPS server docs](https://sing-box.sagernet.org/configuration/dns/server/https/)
 - [v1.13.14 VLESS option fields](https://github.com/SagerNet/sing-box/blob/25a600db24f7680ad9806ce5427bd0ab8afe1114/option/vless.go#L17-L27)
 - [v1.13.14 WebSocket option fields](https://github.com/SagerNet/sing-box/blob/25a600db24f7680ad9806ce5427bd0ab8afe1114/option/v2ray_transport.go#L11-L84)
 - [v1.13.14 TLS option fields](https://github.com/SagerNet/sing-box/blob/25a600db24f7680ad9806ce5427bd0ab8afe1114/option/tls.go#L97-L125)
