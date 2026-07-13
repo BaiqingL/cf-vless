@@ -559,8 +559,9 @@ func (c *Client) SetSecret(ctx context.Context, request SecretRequest) (Operatio
 		return markerOperation, fmt.Errorf("%w: Worker ownership marker does not match", ErrResourceConflict)
 	}
 
-	input := make([]byte, 0, len(request.Value)+1)
-	input = append(input, request.Value...)
+	// Clone before appending so the caller's backing array stays untouched.
+	// append performs its own overflow-safe growth without len(value)+1 math.
+	input := bytes.Clone(request.Value)
 	input = append(input, '\n')
 	defer zeroBytes(input)
 	command := c.cfWorkerCommand(

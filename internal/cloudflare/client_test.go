@@ -221,8 +221,9 @@ func TestRequireSupportedCFVersionCannotBeRelaxedByDoctorExpectation(t *testing.
 }
 
 func TestSetSecretUsesCFProtectedStdinAndRedactsEveryDiagnostic(t *testing.T) {
-	secret := []byte(`{"current":{"uuid":"efb7a5ec-6b0f-4d85-8ffd-cad102494f2c","path":"/edge"},"previous":{"uuid":"27848739-7e62-4138-9fd3-098a63964b6b","path":"/old-edge","expiresAt":"2030-01-01T00:00:00Z"}}`)
-	secretText := string(secret)
+	const secretText = `{"current":{"uuid":"efb7a5ec-6b0f-4d85-8ffd-cad102494f2c","path":"/edge"},"previous":{"uuid":"27848739-7e62-4138-9fd3-098a63964b6b","path":"/old-edge","expiresAt":"2030-01-01T00:00:00Z"}}`
+	secretBacking := append([]byte(secretText), 0x7f)
+	secret := secretBacking[:len(secretText)]
 	escapedSecret := strconv.Quote(secretText)
 	runner := &scriptedRunner{t: t, steps: []runStep{
 		{stdout: `{"result":[` + testManagedScriptInventoryItem + `]}`},
@@ -247,6 +248,9 @@ func TestSetSecretUsesCFProtectedStdinAndRedactsEveryDiagnostic(t *testing.T) {
 	}
 	if string(secret) != secretText {
 		t.Fatal("SetSecret modified the caller-owned secret buffer")
+	}
+	if secretBacking[len(secret)] != 0x7f {
+		t.Fatal("SetSecret modified caller-owned capacity beyond the secret")
 	}
 
 	runner.assertDone(t)
