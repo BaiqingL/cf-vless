@@ -1,0 +1,263 @@
+{
+  "schema_version": 1,
+  "protocol": "VLESS v0 TCP",
+  "upstream": "https://github.com/XTLS/Xray-core.git",
+  "upstream_commit": "50231eaff98ccc31b5cbd247a721c16e97fe5ec1",
+  "upstream_tag": "v26.7.11",
+  "sanitized_uuid": "00112233-4455-6677-8899-aabbccddeeff",
+  "response_header_hex": "0000",
+  "cases": [
+    {
+      "name": "domain",
+      "address_type": "domain",
+      "host": "example.com",
+      "port": 443,
+      "request_header_hex": "0000112233445566778899aabbccddeeff000101bb020b6578616d706c652e636f6d",
+      "header_bytes": 34,
+      "initial_payload_hex": "01020304",
+      "wire_hex": "0000112233445566778899aabbccddeeff000101bb020b6578616d706c652e636f6d01020304",
+      "fragmentations": [
+        {
+          "name": "single_message",
+          "chunk_sizes": [
+            38
+          ]
+        },
+        {
+          "name": "header_then_payload",
+          "chunk_sizes": [
+            34,
+            4
+          ]
+        },
+        {
+          "name": "version_then_remainder",
+          "chunk_sizes": [
+            1,
+            37
+          ]
+        },
+        {
+          "name": "field_boundaries",
+          "chunk_sizes": [
+            1,
+            16,
+            1,
+            1,
+            2,
+            1,
+            1,
+            11,
+            4
+          ]
+        },
+        {
+          "name": "bytewise_header",
+          "chunk_sizes": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ipv4",
+      "address_type": "ipv4",
+      "host": "203.0.113.7",
+      "port": 80,
+      "request_header_hex": "0000112233445566778899aabbccddeeff0001005001cb007107",
+      "header_bytes": 26,
+      "initial_payload_hex": "01020304",
+      "wire_hex": "0000112233445566778899aabbccddeeff0001005001cb00710701020304",
+      "fragmentations": [
+        {
+          "name": "single_message",
+          "chunk_sizes": [
+            30
+          ]
+        },
+        {
+          "name": "header_then_payload",
+          "chunk_sizes": [
+            26,
+            4
+          ]
+        },
+        {
+          "name": "version_then_remainder",
+          "chunk_sizes": [
+            1,
+            29
+          ]
+        },
+        {
+          "name": "field_boundaries",
+          "chunk_sizes": [
+            1,
+            16,
+            1,
+            1,
+            2,
+            1,
+            4,
+            4
+          ]
+        },
+        {
+          "name": "bytewise_header",
+          "chunk_sizes": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ipv6",
+      "address_type": "ipv6",
+      "host": "2001:db8::1",
+      "port": 8443,
+      "request_header_hex": "0000112233445566778899aabbccddeeff000120fb0320010db8000000000000000000000001",
+      "header_bytes": 38,
+      "initial_payload_hex": "01020304",
+      "wire_hex": "0000112233445566778899aabbccddeeff000120fb0320010db800000000000000000000000101020304",
+      "fragmentations": [
+        {
+          "name": "single_message",
+          "chunk_sizes": [
+            42
+          ]
+        },
+        {
+          "name": "header_then_payload",
+          "chunk_sizes": [
+            38,
+            4
+          ]
+        },
+        {
+          "name": "version_then_remainder",
+          "chunk_sizes": [
+            1,
+            41
+          ]
+        },
+        {
+          "name": "field_boundaries",
+          "chunk_sizes": [
+            1,
+            16,
+            1,
+            1,
+            2,
+            1,
+            16,
+            4
+          ]
+        },
+        {
+          "name": "bytewise_header",
+          "chunk_sizes": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            4
+          ]
+        }
+      ]
+    }
+  ]
+}

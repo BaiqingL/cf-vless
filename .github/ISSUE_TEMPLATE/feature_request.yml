@@ -1,0 +1,28 @@
+name: Feature request
+description: Propose a bounded change within the project's TCP-only scope
+title: "feature: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest useful change and its security implications.
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This remains VLESS v0 TCP over WebSocket on Cloudflare Workers.
+          required: true
+        - label: I have not included private deployment details or credentials.
+          required: true

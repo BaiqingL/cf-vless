@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/BaiqingL/cf-vless/security/advisories/new
+    about: Report vulnerabilities privately; never disclose credentials in an issue.
+  - name: Support guide
+    url: https://github.com/BaiqingL/cf-vless/blob/main/SUPPORT.md
+    about: Read the support and redaction guidance before asking for help.

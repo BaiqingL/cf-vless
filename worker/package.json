@@ -1,0 +1,50 @@
+{
+  "name": "cf-vless-worker",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BaiqingL/cf-vless.git",
+    "directory": "worker"
+  },
+  "homepage": "https://github.com/BaiqingL/cf-vless#readme",
+  "bugs": "https://github.com/BaiqingL/cf-vless/issues",
+  "type": "module",
+  "packageManager": "npm@11.17.0",
+  "engines": {
+    "node": "^22.18.0 || >=24.0.0",
+    "npm": ">=11.0.0"
+  },
+  "scripts": {
+    "check": "npm run format:check && npm run types:check && npm run typecheck && npm run lint && npm test",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "format": "prettier --write src test vitest.config.ts \"../.github/**/*.yml\"",
+    "format:check": "prettier --check src test vitest.config.ts \"../.github/**/*.yml\"",
+    "lint": "oxlint --type-aware --vitest-plugin --deny-warnings --report-unused-disable-directives cloudflare.config.ts src test && oxlint --vitest-plugin --deny-warnings --report-unused-disable-directives vitest.config.ts",
+    "lint:docs": "cd .. && worker/node_modules/.bin/markdownlint-cli2",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p test/tsconfig.json && tsc --noEmit -p tsconfig.tools.json",
+    "types": "wrangler types",
+    "types:check": "wrangler types --check"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.18.4",
+    "@types/node": "22.20.1",
+    "markdownlint-cli2": "0.23.0",
+    "oxlint": "1.73.0",
+    "oxlint-tsgolint": "0.24.0",
+    "prettier": "3.9.5",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10",
+    "wrangler": "4.110.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "fsevents@2.3.3": true,
+    "sharp@0.34.5": true,
+    "workerd@1.20260708.1": true
+  }
+}

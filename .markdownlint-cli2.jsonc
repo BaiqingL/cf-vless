@@ -1,0 +1,33 @@
+{
+  "$schema": "./worker/node_modules/markdownlint-cli2/schema/markdownlint-cli2-config-schema.json",
+  "config": {
+    "MD013": false,
+    "MD024": {
+      "siblings_only": true
+    }
+  },
+  "globs": [
+    "*.md",
+    ".github/**/*.md",
+    "cmd/**/*.md",
+    "decisions/**/*.md",
+    "docs/**/*.md",
+    "learnings/**/*.md",
+    "research/**/*.md",
+    "test/**/*.md"
+  ],
+  "ignores": [
+    "third_party/**",
+    "worker/node_modules/**"
+  ],
+  "overrides": [
+    {
+      "filter": ["requirement.md"],
+      "combine": "merge",
+      "config": {
+        "MD040": false,
+        "MD041": false
+      }
+    }
+  ]
+}

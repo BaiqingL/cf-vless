@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  verify:
+    name: Verify release
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Check out
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Validate tag
+        shell: bash
+        run: |
+          [[ "$GITHUB_REF_NAME" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.x"
+
+      - name: Set up Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "22.18.x"
+          cache: npm
+          cache-dependency-path: worker/package-lock.json
+
+      - name: Install npm
+        run: npm install --global npm@11.17.0
+
+      - name: Install Worker dependencies
+        run: npm --prefix worker ci
+
+      - name: Run release gate
+        run: make check
+
+      - name: Verify pinned Xray reference
+        env:
+          CF_VLESS_TEST_LOCAL_REFERENCE: "1"
+        run: go test ./internal/xray -run '^TestLocalPinnedXrayVLESSWebSocketReferencePair$' -count=1 -timeout=12m
+
+      - name: Validate Worker dry run
+        run: npm --prefix worker exec -- wrangler deploy --cwd worker --dry-run --outdir "$RUNNER_TEMP/worker-dist"
+
+      - name: Verify build
+        run: go build -trimpath -o "$RUNNER_TEMP/cf-vless" ./cmd/cf-vless
+
+      - name: Verify generated files are unchanged
+        run: git diff --exit-code
+
+  publish:
+    name: Publish release
+    needs: verify
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" \
+            --repo "$GH_REPO" \
+            --verify-tag \
+            --generate-notes \
+            --title "$TAG" \
+            --notes "Install with \`git clone --branch $TAG --recurse-submodules https://github.com/$GH_REPO.git\`. GitHub-generated source archives omit the pinned Xray submodule and are not complete installations."

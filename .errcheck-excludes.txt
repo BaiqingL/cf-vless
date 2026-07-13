@@ -1,0 +1,6 @@
+// Command status and help output cannot be recovered after an io.Writer error.
+// File, response-body, and connection cleanup remains checked or is explicitly
+// marked best effort at the call site.
+fmt.Fprint
+fmt.Fprintf
+fmt.Fprintln
