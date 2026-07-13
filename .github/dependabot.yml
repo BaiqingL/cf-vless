@@ -19,6 +19,10 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "deps(worker)"
+    ignore:
+      # Keep ambient Node APIs aligned with the oldest supported runtime.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       worker-minor-patch:
         update-types: [minor, patch]
