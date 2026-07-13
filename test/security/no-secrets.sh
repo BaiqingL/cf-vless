@@ -1,11 +1,6 @@
 #!/bin/sh
 set -eu
 
-if ! command -v rg >/dev/null 2>&1; then
-  echo "ripgrep (rg) is required for the security scan" >&2
-  exit 1
-fi
-
 if ! command -v git >/dev/null 2>&1; then
   echo "git is required for the tracked-file privacy scan" >&2
   exit 1
@@ -39,7 +34,7 @@ email_matches=$(git grep -I -n -E '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,
     exit "$status"
   fi
 })
-unexpected_email_matches=$(printf '%s\n' "$email_matches" | rg -v '@([A-Za-z0-9.-]+\.)?example\.(com|net|org)' || {
+unexpected_email_matches=$(printf '%s\n' "$email_matches" | grep -E -v '@([A-Za-z0-9.-]+\.)?example\.(com|net|org)' || {
   status=$?
   if [ "$status" -ne 1 ]; then
     exit "$status"
@@ -57,7 +52,7 @@ edge_hostname_matches=$(git grep -I -n -E '(^|[^A-Za-z0-9-])edge\.[A-Za-z0-9.-]+
     exit "$status"
   fi
 })
-unexpected_edge_hostname_matches=$(printf '%s\n' "$edge_hostname_matches" | rg -v 'edge\.([A-Za-z0-9-]+\.)*example(\.(com|net|org))?' || {
+unexpected_edge_hostname_matches=$(printf '%s\n' "$edge_hostname_matches" | grep -E -v 'edge\.([A-Za-z0-9-]+\.)*example(\.(com|net|org))?' || {
   status=$?
   if [ "$status" -ne 1 ]; then
     exit "$status"
@@ -69,9 +64,9 @@ if [ -n "$unexpected_edge_hostname_matches" ]; then
   exit 1
 fi
 
-if rg -ni "(api[_-]?token|api[_-]?key|authorization)[[:space:]]*[:=][[:space:]]*[\"'][A-Za-z0-9][^\"']{7,}" \
+if git grep -I -n -i -E "(api[_-]?token|api[_-]?key|authorization)[[:space:]]*[:=][[:space:]]*[\"'][A-Za-z0-9][^\"']{7,}" -- \
   worker/src worker/wrangler.jsonc worker/cloudflare.config.ts cmd internal \
-  -g '*.ts' -g '*.go' -g '*.json' -g '*.jsonc' -g '!**/*_test.go'; then
+  ':(exclude,glob)**/*_test.go'; then
   echo "possible hard-coded credential found" >&2
   exit 1
 else
@@ -81,9 +76,9 @@ else
   fi
 fi
 
-if rg -n 'console\.(log|error)|(^|[^A-Za-z])(log|printf|println)\([^\n]*(uuid|path|destination|client[_-]?ip|request\.url)' \
+if git grep -I -n -E 'console\.(log|error)|(^|[^A-Za-z])(log|printf|println)\(.*(uuid|path|destination|client[_-]?ip|request\.url)' -- \
   worker/src cmd internal \
-  -g '*.ts' -g '*.go' -g '!**/*_test.go'; then
+  ':(exclude,glob)**/*_test.go'; then
   echo "sensitive logging pattern found" >&2
   exit 1
 else
