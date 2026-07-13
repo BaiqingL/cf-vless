@@ -214,6 +214,23 @@ Current formats differ in important ways: sing-box VLESS `network: tcp` is not
 Mihomo's `network: ws`, and current Xray uses `streamSettings.method`. Do not
 manually combine fields from different clients.
 
+## sing-box runs but shows no traffic
+
+Regenerate the client artifacts. Older generated profiles exposed only a
+loopback mixed proxy, so no traffic entered sing-box unless each application or
+the operating system explicitly used `127.0.0.1:1080`.
+
+The current `sing-box.json` uses a system-wide TUN inbound. The command-line
+client needs permission to create the TUN interface and install routes. Run it
+with the appropriate administrator privileges, or import it into a graphical
+sing-box client and grant that client's VPN permission. Confirm startup did not
+report a TUN/route permission error. The China-direct/foreign-proxy policy only
+applies after traffic enters sing-box.
+
+Use the opt-in policy test in `docs/client-configurations.md` to distinguish a
+route-policy or tunnel failure from missing system capture. It explicitly
+drives the unprivileged mixed inbound and verifies both selected outbound tags.
+
 ## Shadowrocket import does not work
 
 Shadowrocket has no public normative URI grammar. Confirm the exact app version,

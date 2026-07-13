@@ -129,58 +129,91 @@ func TestXrayJSONUsesCurrentCanonicalShape(t *testing.T) {
 	}
 }
 
-func TestSingBoxJSONUsesTCPOverWebSocketTLS(t *testing.T) {
+func TestSingBoxJSONUsesSystemWideChinaDirectPolicy(t *testing.T) {
 	got, err := SingBoxJSON(deployment())
 	if err != nil {
 		t.Fatalf("SingBoxJSON() error = %v", err)
 	}
-	want := `{
-  "log": {
-    "level": "warn"
-  },
-  "inbounds": [
-    {
-      "type": "mixed",
-      "tag": "mixed-in",
-      "listen": "127.0.0.1",
-      "listen_port": 1080
-    }
-  ],
-  "outbounds": [
-    {
-      "type": "vless",
-      "tag": "proxy",
-      "server": "edge.example.com",
-      "server_port": 443,
-      "uuid": "27848739-7e62-4138-9fd3-098a63964b6b",
-      "network": "tcp",
-      "tls": {
-        "enabled": true,
-        "server_name": "edge.example.com",
-        "insecure": false
-      },
-      "transport": {
-        "type": "ws",
-        "path": "/random-path-0001",
-        "headers": {
-          "Host": "edge.example.com"
-        }
-      }
-    }
-  ],
-  "route": {
-    "final": "proxy"
-  }
-}
-`
-	if string(got) != want {
-		t.Fatalf("SingBoxJSON() =\n%s\nwant\n%s", got, want)
-	}
 	assertValidJSON(t, got)
+	var document map[string]any
+	if err := json.Unmarshal(got, &document); err != nil {
+		t.Fatal(err)
+	}
+	dns := document["dns"].(map[string]any)
+	servers := dns["servers"].([]any)
+	dnsServer := servers[0].(map[string]any)
+	if dns["final"] != "china-dns" || dns["strategy"] != "prefer_ipv4" || len(servers) != 1 || dnsServer["type"] != "https" ||
+		dnsServer["server"] != singBoxChinaDNSIP || dnsServer["server_port"] != float64(443) || dnsServer["path"] != "/dns-query" ||
+		dnsServer["tls"].(map[string]any)["server_name"] != singBoxChinaDNSName || dnsServer["tls"].(map[string]any)["insecure"] != false {
+		t.Fatalf("sing-box DNS policy = %#v", dns)
+	}
+	inbounds := document["inbounds"].([]any)
+	tun := inbounds[0].(map[string]any)
+	addresses := tun["address"].([]any)
+	if len(inbounds) != 1 || tun["type"] != "tun" || tun["tag"] != "tun-in" || tun["auto_route"] != true || tun["strict_route"] != true ||
+		len(addresses) != 2 || addresses[0] != singBoxTUNIPv4CIDR || addresses[1] != singBoxTUNIPv6CIDR {
+		t.Fatalf("sing-box TUN inbound = %#v", tun)
+	}
+	outbounds := document["outbounds"].([]any)
+	proxy := outbounds[0].(map[string]any)
+	direct := outbounds[1].(map[string]any)
+	if len(outbounds) != 2 || proxy["type"] != "vless" || proxy["tag"] != "proxy" || proxy["network"] != "tcp" || proxy["domain_resolver"] != "china-dns" ||
+		direct["type"] != "direct" || direct["tag"] != "direct" {
+		t.Fatalf("sing-box outbounds = %#v", outbounds)
+	}
+	proxyTLS := proxy["tls"].(map[string]any)
+	proxyTransport := proxy["transport"].(map[string]any)
+	if proxyTLS["enabled"] != true || proxyTLS["server_name"] != "edge.example.com" || proxyTLS["insecure"] != false ||
+		proxyTransport["type"] != "ws" || proxyTransport["path"] != "/random-path-0001" ||
+		proxyTransport["headers"].(map[string]any)["Host"] != "edge.example.com" {
+		t.Fatalf("sing-box secure transport = tls:%#v transport:%#v", proxyTLS, proxyTransport)
+	}
+	route := document["route"].(map[string]any)
+	if route["final"] != "proxy" || route["auto_detect_interface"] != true || route["default_domain_resolver"].(map[string]any)["server"] != "china-dns" {
+		t.Fatalf("sing-box route defaults = %#v", route)
+	}
+	rules := route["rules"].([]any)
+	if len(rules) != 8 || rules[0].(map[string]any)["action"] != "sniff" ||
+		rules[1].(map[string]any)["protocol"] != "dns" || rules[1].(map[string]any)["action"] != "hijack-dns" ||
+		rules[2].(map[string]any)["ip_is_private"] != true || rules[2].(map[string]any)["outbound"] != "direct" ||
+		rules[3].(map[string]any)["action"] != "resolve" || rules[3].(map[string]any)["server"] != "china-dns" ||
+		rules[4].(map[string]any)["ip_is_private"] != true || rules[4].(map[string]any)["outbound"] != "direct" ||
+		rules[5].(map[string]any)["rule_set"] != "geoip-cn" || rules[5].(map[string]any)["outbound"] != "direct" ||
+		rules[6].(map[string]any)["network"] != "udp" || rules[6].(map[string]any)["action"] != "reject" ||
+		rules[7].(map[string]any)["network"] != "icmp" || rules[7].(map[string]any)["action"] != "reject" {
+		t.Fatalf("sing-box route rules = %#v", rules)
+	}
+	ruleSets := route["rule_set"].([]any)
+	china := ruleSets[0].(map[string]any)
+	if len(ruleSets) != 1 || china["tag"] != "geoip-cn" || china["format"] != "binary" || china["url"] != singBoxGeoIPCNURL || china["download_detour"] != "proxy" {
+		t.Fatalf("sing-box China rule set = %#v", china)
+	}
+	cache := document["experimental"].(map[string]any)["cache_file"].(map[string]any)
+	if cache["enabled"] != true {
+		t.Fatalf("sing-box cache policy = %#v", cache)
+	}
 	for _, forbidden := range []string{`"flow"`, `"packet_encoding"`, `"multiplex"`, previousUUID} {
 		if bytes.Contains(got, []byte(forbidden)) {
 			t.Fatalf("SingBoxJSON() contains forbidden value %q", forbidden)
 		}
+	}
+}
+
+func TestSingBoxIntegrationJSONKeepsMixedInboundAndRoutingPolicy(t *testing.T) {
+	got, err := SingBoxJSONWithLocalPort(deployment(), 19080)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var document map[string]any
+	if err := json.Unmarshal(got, &document); err != nil {
+		t.Fatal(err)
+	}
+	inbound := document["inbounds"].([]any)[0].(map[string]any)
+	if inbound["type"] != "mixed" || inbound["listen"] != "127.0.0.1" || inbound["listen_port"] != float64(19080) {
+		t.Fatalf("sing-box integration inbound = %#v", inbound)
+	}
+	if document["route"].(map[string]any)["final"] != "proxy" || len(document["outbounds"].([]any)) != 2 {
+		t.Fatalf("sing-box integration policy = %#v", document["route"])
 	}
 }
 

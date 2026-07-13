@@ -84,13 +84,14 @@ func LocateBinary(name Name, requested string) (string, error) {
 }
 
 type Spec struct {
-	Name         Name
-	Binary       string
-	ConfigPath   string
-	SOCKSAddress string
-	CheckArgs    []string
-	RunArgs      []string
-	VersionArgs  []string
+	Name             Name
+	Binary           string
+	ConfigPath       string
+	WorkingDirectory string
+	SOCKSAddress     string
+	CheckArgs        []string
+	RunArgs          []string
+	VersionArgs      []string
 }
 
 // Prepare creates one private client configuration in directory. The supplied
@@ -106,9 +107,10 @@ func Prepare(name Name, binary, directory string, deployment *config.Deployment,
 		return Spec{}, errors.New("create private client directory")
 	}
 	specification := Spec{
-		Name:         name,
-		Binary:       binary,
-		SOCKSAddress: net.JoinHostPort("127.0.0.1", strconv.Itoa(int(socksPort))),
+		Name:             name,
+		Binary:           binary,
+		WorkingDirectory: directory,
+		SOCKSAddress:     net.JoinHostPort("127.0.0.1", strconv.Itoa(int(socksPort))),
 	}
 	switch name {
 	case Xray:

@@ -11,5 +11,6 @@ worker/.wrangler/
 worker/coverage/
 worker/node_modules/
 bin/
+cache.db
 *.log
 *.cpuprofile

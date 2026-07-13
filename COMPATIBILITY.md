@@ -60,6 +60,14 @@ idle attempt was excluded from Worker results because the upstream test service
 closed its own idle TCP connection; the 30-second active gate and independent
 45-second true-idle resume are the controlled records.
 
+On 2026-07-13 UTC, a separate sing-box v1.13.14 policy gate used the current
+deployed Worker and established two explicit TCP connections through the
+client's mixed test inbound. A known mainland China address selected
+`outbound/direct[direct]` and completed a verified TLS handshake; a known
+foreign address selected `outbound/vless[proxy]` and completed a separate
+verified TLS handshake through the Worker. Client logs were retained only in
+memory and reduced to those two boolean route assertions.
+
 Shadowrocket additionally requires a real-device import from both raw URI and
 QR code followed by the checklist in `research/client-compatibility.md`. The
 generated raw URI and QR encode the same syntactically valid payload, but that
@@ -73,7 +81,9 @@ is not a real-device connection result.
 - Xray warns that WebSocket is deprecated in favor of XHTTP. This repository's
   fixed protocol remains WebSocket; a warning is not permission to change it.
 - sing-box uses VLESS `network: "tcp"` to restrict the command and
-  `transport.type: "ws"` for the outer transport.
+  `transport.type: "ws"` for the outer transport. The shipped profile uses a
+  TUN inbound, the official `geoip-cn` rule set for direct mainland ranges, and
+  an explicit `proxy` final route for unmatched public TCP.
 - Mihomo uses `network: ws`, `udp: false`, TLS verification, and an empty plain
   VLESS encryption value.
 - Shadowrocket publishes no normative VLESS URI parser grammar. The generated

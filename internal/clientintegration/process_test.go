@@ -82,13 +82,14 @@ func TestRunnerChecksStartsWaitsAndStopsClient(t *testing.T) {
 		t.Fatal(err)
 	}
 	specification := Spec{
-		Name:         SingBox,
-		Binary:       binaryPath,
-		ConfigPath:   configPath,
-		SOCKSAddress: listener.Addr().String(),
-		CheckArgs:    []string{"check", "-c", configPath},
-		RunArgs:      []string{"run", "-c", configPath},
-		VersionArgs:  []string{"version"},
+		Name:             SingBox,
+		Binary:           binaryPath,
+		ConfigPath:       configPath,
+		WorkingDirectory: directory,
+		SOCKSAddress:     listener.Addr().String(),
+		CheckArgs:        []string{"check", "-c", configPath},
+		RunArgs:          []string{"run", "-c", configPath},
+		VersionArgs:      []string{"version"},
 	}
 	executor := &fakeExecutor{run: func(command Command) ([]byte, error) {
 		return []byte("sing-box version 1.12.0\n"), nil
@@ -106,6 +107,9 @@ func TestRunnerChecksStartsWaitsAndStopsClient(t *testing.T) {
 	}
 	if !slices.Equal(starter.command.Args, specification.RunArgs) {
 		t.Fatalf("start args = %q", starter.command.Args)
+	}
+	if len(executor.calls) != 2 || executor.calls[1].Dir != directory || starter.command.Dir != directory {
+		t.Fatalf("client working directories = check:%q run:%q", executor.calls[1].Dir, starter.command.Dir)
 	}
 	if err := client.Stop(context.Background()); err != nil {
 		t.Fatal(err)
