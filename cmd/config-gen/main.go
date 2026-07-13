@@ -78,6 +78,6 @@ func runWithOperationLock(args []string, stdout, stderr io.Writer, acquireOperat
 		return 1
 	}
 
-	fmt.Fprintf(stdout, "wrote 5 client configuration files to %s\n", *outputDirectory)
+	fmt.Fprintf(stdout, "wrote 6 client configuration files to %s\n", *outputDirectory)
 	return 0
 }

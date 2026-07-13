@@ -179,7 +179,8 @@ guard, not a bearer credential and not a substitute for the UUID.
 ```
 
 `config` derives every format from the same current credential and promotes all
-five mode-`0600` artifacts as one generation. It refuses an existing output
+six mode-`0600` artifacts as one generation, including the animated
+`sing-box.gif` QRS profile. It refuses an existing output
 directory unless `--force` is supplied; forced replacement still refuses
 unexpected files. `test` defaults to all three unmodified clients and invokes
 the same DNS/HTTPS, download, upload, long-lived TCP, concurrency, and reconnect

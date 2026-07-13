@@ -216,6 +216,32 @@ sing-box check -c ./path/to/sing-box.json
 
 The [configuration reference](https://sing-box.sagernet.org/configuration/) documents `sing-box check`. Official v1.13.14 release assets cover common operating systems, and the [package-manager page](https://sing-box.sagernet.org/installation/package-manager/) lists supported installation paths. The exact sample shape above exited 0 with the official darwin-arm64 v1.13.14 binary on the research date.
 
+### Official-client QRS profile transfer
+
+A normal static sing-box QR is reserved for the documented
+`sing-box://import-remote-profile` URI and therefore needs an HTTPS profile
+endpoint. Raw JSON is rejected by the ordinary scanner path. Current official
+Android and Apple clients also implement QRS (QR Stream), which transfers a
+complete local `.bpf` profile across a sequence of QR frames. This project uses
+QRS so it does not have to publish a credential-bearing configuration merely
+to make it scannable.
+
+`sing-box.gif` wraps the generated JSON in the pinned v1.13.14 libbox local
+profile format and the official QRS file metadata envelope, deflates it, then
+loops deterministic degree-one 500-byte QRS blocks at 10 frames per second.
+Tests independently decode every QR frame, assemble and inflate the stream,
+verify the CRC-32/XOR checksum, parse the `.bpf` envelope, and compare the
+embedded JSON byte-for-byte with `sing-box.json`. A current official-app scan
+remains a device interoperability gate.
+
+Authoritative implementation references:
+
+- [remote-profile import URI documentation](https://sing-box.sagernet.org/clients/general/)
+- [v1.13.14 libbox profile encoding](https://github.com/SagerNet/sing-box/blob/25a600db24f7680ad9806ce5427bd0ab8afe1114/experimental/libbox/profile_import.go#L166-L244)
+- [Android QRS encoder](https://github.com/SagerNet/sing-box-for-android/blob/d5dfc2b6bffb0bc0eb307cfb41224b373aca1d91/app/src/main/java/io/nekohasekai/sfa/qrs/QRSEncoder.kt)
+- [Android QRS decoder](https://github.com/SagerNet/sing-box-for-android/blob/d5dfc2b6bffb0bc0eb307cfb41224b373aca1d91/app/src/main/java/io/nekohasekai/sfa/qrs/QRSDecoder.kt)
+- [Apple QRS block format](https://github.com/SagerNet/sing-box-for-apple/blob/d759f896b25ff6d3a0f643e9d08a162e90ade21b/ApplicationLibrary/LubyTransform/EncodedBlock.swift)
+
 ## Mihomo / Clash Meta YAML
 
 ### Canonical v1.19.28 shape
@@ -363,6 +389,7 @@ Record a dated, sanitized result containing the Shadowrocket version, iOS/iPadOS
 | --- | --- | --- |
 | Xray JSON | `xray run -test -format=json -config FILE` | pinned Xray end-to-end run through the Worker |
 | sing-box JSON | `sing-box check -c FILE` | executable end-to-end run through the Worker |
+| sing-box QRS GIF | decode every frame, assemble/checksum/decode `.bpf`, compare embedded JSON | current official-app scan/import |
 | Mihomo YAML | `mihomo -t -f FILE` | executable end-to-end run through the Worker |
 | VLESS URI / QR | internal URI parse-and-round-trip unit tests | real Shadowrocket import plus connection checklist |
 
@@ -377,6 +404,7 @@ All web sources below were accessed on **2026-07-12**.
 - Xray-core [VMessAEAD/VLESS share-link proposal #716](https://github.com/XTLS/Xray-core/discussions/716), opened 2020-12-19 and still edited by maintainers through 2026.
 - SagerNet/sing-box [v1.13.14 release](https://github.com/SagerNet/sing-box/releases/tag/v1.13.14), released 2026-06-25; commit `25a600db24f7680ad9806ce5427bd0ab8afe1114`.
 - sing-box [VLESS](https://sing-box.sagernet.org/configuration/outbound/vless/), [V2Ray transport](https://sing-box.sagernet.org/configuration/shared/v2ray-transport/), [TLS](https://sing-box.sagernet.org/configuration/shared/tls/), and [installation](https://sing-box.sagernet.org/installation/package-manager/) documentation.
+- Official sing-box Android commit `d5dfc2b6bffb0bc0eb307cfb41224b373aca1d91` and Apple commit `d759f896b25ff6d3a0f643e9d08a162e90ade21b` for QRS framing, decoding, and profile import behavior.
 - MetaCubeX/mihomo [v1.19.28 release](https://github.com/MetaCubeX/mihomo/releases/tag/v1.19.28), released 2026-07-08; commit `cbd11db1e13a75d8e680e0fe7742c95be4cba2be`.
 - Mihomo [VLESS](https://wiki.metacubex.one/en/config/proxies/vless/), [transport](https://wiki.metacubex.one/en/config/proxies/transport/), and [TLS](https://wiki.metacubex.one/en/config/proxies/tls/) documentation, page content dated 2026-05-14 where shown.
 - Apple [Shadowrocket App Store listing](https://apps.apple.com/us/app/shadowrocket/id932747118), version 2.2.90 observed.

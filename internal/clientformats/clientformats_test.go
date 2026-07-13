@@ -284,10 +284,10 @@ func TestGenerateReturnsAllFormatsAndRejectsInvalidConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Generate() error = %v", err)
 	}
-	if outputs.VLESSURI == "" || len(outputs.QRCodePNG) == 0 || len(outputs.XrayJSON) == 0 || len(outputs.SingBoxJSON) == 0 || len(outputs.MihomoYAML) == 0 {
+	if outputs.VLESSURI == "" || len(outputs.QRCodePNG) == 0 || len(outputs.XrayJSON) == 0 || len(outputs.SingBoxJSON) == 0 || len(outputs.SingBoxQRCodeGIF) == 0 || len(outputs.MihomoYAML) == 0 {
 		t.Fatalf("Generate() returned an empty artifact: %#v", outputs)
 	}
-	for _, artifact := range [][]byte{[]byte(outputs.VLESSURI), outputs.QRCodePNG, outputs.XrayJSON, outputs.SingBoxJSON, outputs.MihomoYAML} {
+	for _, artifact := range [][]byte{[]byte(outputs.VLESSURI), outputs.QRCodePNG, outputs.XrayJSON, outputs.SingBoxJSON, outputs.SingBoxQRCodeGIF, outputs.MihomoYAML} {
 		if bytes.Contains(artifact, []byte(previousUUID)) {
 			t.Fatal("Generate() exposed previous credential")
 		}

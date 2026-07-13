@@ -1093,7 +1093,8 @@ func runConfig(args []string, stdout, stderr io.Writer) int {
 	if err := clientformats.WriteArtifacts(output, *deployment, *force); err != nil {
 		return printError(stderr, "config", err)
 	}
-	fmt.Fprintf(stdout, "wrote 5 private client artifacts to %s\n", output)
+	fmt.Fprintf(stdout, "wrote 6 private client artifacts to %s\n", output)
+	fmt.Fprintln(stdout, "sing-box.gif is an animated QRS profile; keep it playing while scanning")
 	fmt.Fprintln(stdout, "Shadowrocket URI/QR manual verification is still required")
 	return 0
 }

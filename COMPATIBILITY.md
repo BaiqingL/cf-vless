@@ -73,6 +73,13 @@ QR code followed by the checklist in `research/client-compatibility.md`. The
 generated raw URI and QR encode the same syntactically valid payload, but that
 is not a real-device connection result.
 
+The generated `sing-box.gif` is separately verified by decoding and assembling
+every QRS frame, validating the stream checksum and libbox profile envelope,
+and comparing its embedded configuration byte-for-byte with `sing-box.json`.
+An import with a current official sing-box app is still a device
+interoperability gate; it is not included in the executable-client live result
+above.
+
 ## Version traps
 
 - Current Xray uses flat VLESS outbound fields, `streamSettings.method:
